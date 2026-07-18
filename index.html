@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Enigma 5.0 — SIES CSI Hackathon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --void: #0A0A0F;
+      --surface: #111118;
+      --card: #16161F;
+      --border: #2A2A3A;
+      --violet: #7C3AED;
+      --violet-dim: #4C1D95;
+      --green: #10B981;
+      --green-dim: #064E3B;
+      --ghost: #F8FAFC;
+      --muted: #6B7280;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Space Grotesk', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--void);
+      color: var(--ghost);
+      font-family: var(--sans);
+      overflow-x: hidden;
+      line-height: 1.6;
+    }
+
+    /* ── NOISE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.4;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.25rem 2.5rem;
+      background: rgba(10,10,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--green);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-family: var(--mono);
+      letter-spacing: 0.05em;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--ghost); }
+
+    .nav-cta {
+      background: var(--violet);
+      color: var(--ghost) !important;
+      padding: 0.5rem 1.25rem;
+      border-radius: 4px;
+      transition: background 0.2s !important;
+    }
+    .nav-cta:hover { background: #6D28D9 !important; color: var(--ghost) !important; }
+
+    /* ── HERO ── */
+    #hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8rem 2rem 4rem;
+      overflow: hidden;
+    }
+
+    /* radial glow bg */
+    #hero::after {
+      content: '';
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(ellipse, rgba(124,58,237,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .hero-eyebrow span { color: var(--muted); }
+
+    h1.cipher-title {
+      font-size: clamp(3.5rem, 10vw, 8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1;
+      margin-bottom: 0.25rem;
+      position: relative;
+      z-index: 1;
+      background: linear-gradient(135deg, #fff 40%, rgba(124,58,237,0.8));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .cipher-version {
+      font-family: var(--mono);
+      font-size: clamp(1rem, 2.5vw, 1.6rem);
+      color: var(--violet);
+      letter-spacing: 0.5em;
+      margin-bottom: 2.5rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-desc {
+      max-width: 560px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin-bottom: 3rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-primary {
+      background: var(--violet);
+      color: #fff;
+      padding: 0.85rem 2.25rem;
+      border-radius: 4px;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+      letter-spacing: 0.03em;
+    }
+    .btn-primary:hover { background: #6D28D9; transform: translateY(-2px); }
+
+    .btn-outline {
+      border: 1px solid var(--border);
+      color: var(--ghost);
+      padding: 0.85rem 2.25rem;
+      border-radius: 4px;
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .btn-outline:hover { border-color: var(--violet); transform: translateY(-2px); }
+
+    /* scrolling cipher tape */
+    .cipher-tape {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      overflow: hidden;
+      padding: 1rem 0;
+      border-top: 1px solid var(--border);
+      z-index: 1;
+    }
+    .tape-inner {
+      display: flex;
+      gap: 3rem;
+      animation: scroll-tape 20s linear infinite;
+      width: max-content;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--border);
+      letter-spacing: 0.15em;
+    }
+    @keyframes scroll-tape {
+      from { transform: translateX(0); }
+      to { transform: translateX(-50%); }
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+
+    .stat {
+      padding: 2.5rem 2rem;
+      text-align: center;
+      border-right: 1px solid var(--border);
+    }
+    .stat:last-child { border-right: none; }
+
+    .stat-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: var(--ghost);
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.4rem;
+    }
+    .stat-value.green { color: var(--green); }
+    .stat-value.violet { color: var(--violet); }
+
+    .stat-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+    }
+
+    /* ── SECTIONS ── */
+    section {
+      padding: 6rem 2rem;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-tag {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      color: var(--green);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+      line-height: 1.1;
+    }
+
+    .section-sub {
+      color: var(--muted);
+      max-width: 520px;
+      margin-bottom: 3rem;
+      font-size: 1rem;
+    }
+
+    /* ── TRACKS ── */
+    .tracks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+    }
+
+    .track-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2.5rem;
+      position: relative;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .track-card:hover { border-color: var(--violet); }
+
+    .track-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+    }
+    .track-card.fintech::before { background: var(--violet); }
+    .track-card.healthtech::before { background: var(--green); }
+
+    .track-icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .track-card h3 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+    }
+
+    .track-card p {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.7;
+    }
+
+    .track-tag {
+      display: inline-block;
+      margin-top: 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      padding: 0.3rem 0.75rem;
+      border-radius: 2px;
+      text-transform: uppercase;
+    }
+    .fintech .track-tag { background: var(--violet-dim); color: #C4B5FD; }
+    .healthtech .track-tag { background: var(--green-dim); color: #6EE7B7; }
+
+    /* ── TIMELINE ── */
+    #timeline { border-top: 1px solid var(--border); }
+
+    .timeline-list {
+      position: relative;
+      margin-top: 3rem;
+    }
+    .timeline-list::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: var(--border);
+    }
+
+    .tl-item {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 2rem;
+      padding: 1.75rem 0 1.75rem 2rem;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+    .tl-item::before {
+      content: '';
+      position: absolute;
+      left: -4px;
+      top: 2.25rem;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--violet);
+      border: 2px solid var(--void);
+    }
+
+    .tl-date {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+      padding-top: 0.15rem;
+    }
+
+    .tl-event {
+      font-size: 1rem;
+      font-weight: 600;
+    }
+    .tl-detail {
+      color: var(--muted);
+      font-size: 0.88rem;
+      margin-top: 0.25rem;
+    }
+
+    /* ── PRIZE ── */
+    #prize { border-top: 1px solid var(--border); }
+
+    .prize-box {
+      background: var(--card);
+      border: 1px solid var(--violet);
+      border-radius: 12px;
+      padding: 4rem 3rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      margin-top: 2rem;
+    }
+
+    .prize-box::before {
+      content: '';
+      position: absolute;
+      top: -100px; left: 50%;
+      transform: translateX(-50%);
+      width: 400px; height: 400px;
+      background: radial-gradient(ellipse, rgba(124,58,237,0.2), transparent 70%);
+      pointer-events: none;
+    }
+
+    .prize-amount {
+      font-size: clamp(3.5rem, 8vw, 6rem);
+      font-weight: 700;
+      color: var(--ghost);
+      display: block;
+      line-height: 1;
+      margin-bottom: 0.5rem;
+    }
+
+    .prize-label {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.3em;
+      color: var(--violet);
+      text-transform: uppercase;
+    }
+
+    .prize-sub {
+      color: var(--muted);
+      margin-top: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    /* ── REGISTER ── */
+    #register { border-top: 1px solid var(--border); text-align: center; }
+
+    .register-box {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .register-box h2 { margin-bottom: 1rem; }
+
+    .register-meta {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      margin: 2rem 0;
+      flex-wrap: wrap;
+    }
+    .reg-meta-item {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.05em;
+    }
+    .reg-meta-item strong { color: var(--ghost); display: block; font-size: 0.95rem; }
+
+    /* ── CONTACT ── */
+    #contact { border-top: 1px solid var(--border); }
+
+    .contact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-top: 2.5rem;
+    }
+
+    .contact-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      transition: border-color 0.3s;
+    }
+    .contact-card:hover { border-color: var(--violet); }
+
+    .contact-card h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+    .contact-role {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--violet);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+    .contact-card a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .contact-card a:hover { color: var(--green); }
+
+    /* ── FOOTER ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 2rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--surface);
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    /* ── GLITCH EFFECT ── */
+    @keyframes glitch1 {
+      0%, 90%, 100% { clip-path: none; transform: none; }
+      91% { clip-path: inset(30% 0 50% 0); transform: translate(-4px, 0); }
+      93% { clip-path: inset(10% 0 80% 0); transform: translate(4px, 0); }
+      95% { clip-path: inset(60% 0 5% 0); transform: translate(-2px, 0); }
+      97% { clip-path: none; transform: none; }
+    }
+
+    .glitch {
+      position: relative;
+      display: inline-block;
+    }
+    .glitch::before, .glitch::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0; left: 0;
+      background: linear-gradient(135deg, #fff 40%, rgba(124,58,237,0.8));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .glitch::before {
+      animation: glitch1 6s infinite;
+      color: var(--violet);
+    }
+    .glitch::after {
+      animation: glitch1 6s infinite 0.1s;
+      color: var(--green);
+    }
+
+    /* ── MOBILE ── */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-links { display: none; }
+      .stats-bar { grid-template-columns: 1fr 1fr; }
+      .stat { border-right: none; border-bottom: 1px solid var(--border); }
+      .tracks-grid, .contact-grid { grid-template-columns: 1fr; }
+      .tl-item { grid-template-columns: 1fr; gap: 0.5rem; padding-left: 1.5rem; }
+      section { padding: 4rem 1.25rem; }
+      .prize-box { padding: 3rem 1.5rem; }
+      footer { flex-direction: column; gap: 0.75rem; text-align: center; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tape-inner { animation: none; }
+      .glitch::before, .glitch::after { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">SIES&nbsp;CSI &mdash; [ ENIGMA 5.0 ]</span>
+  <ul class="nav-links">
+    <li><a href="#tracks">Tracks</a></li>
+    <li><a href="#timeline">Timeline</a></li>
+    <li><a href="#prize">Prize</a></li>
+    <li><a href="#contact">Contact</a></li>
+    <li><a href="#register" class="nav-cta">Register</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <p class="hero-eyebrow"><span>//</span> SIES CSI presents &nbsp;·&nbsp; flagship hackathon 2025</p>
+  <h1 class="cipher-title">
+    <span class="glitch" id="cipher" data-text="ENIGMA">ENIGMA</span>
+  </h1>
+  <p class="cipher-version" id="version-text">5&thinsp;.&thinsp;0</p>
+  <p class="hero-desc">
+    The answer was never given. It must be decoded. Two tracks. One prize pool. Unlimited ambition.
+    Assemble your team and crack the cipher.
+  </p>
+  <div class="hero-actions">
+    <a href="#register" class="btn-primary">Register Now</a>
+    <a href="#timeline" class="btn-outline">View Timeline</a>
+  </div>
+
+  <div class="cipher-tape">
+    <div class="tape-inner" id="tape"></div>
+  </div>
+</section>
+
+<!-- STATS BAR -->
+<div class="stats-bar">
+  <div class="stat">
+    <span class="stat-value violet">₹25K</span>
+    <span class="stat-label">Prize Pool</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">2</span>
+    <span class="stat-label">Tracks</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value green">4</span>
+    <span class="stat-label">Members / Team</span>
+  </div>
+  <div class="stat">
+    <span class="stat-value">UG</span>
+    <span class="stat-label">Open To All UG Students</span>
+  </div>
+</div>
+
+<!-- TRACKS -->
+<section id="tracks">
+  <p class="section-tag">// 02 — hackathon tracks</p>
+  <h2>Choose Your Domain.</h2>
+  <p class="section-sub">Two problem spaces. Both demand precision, creativity, and the courage to ship something real.</p>
+  <div class="tracks-grid">
+    <div class="track-card fintech">
+      <span class="track-icon">◈</span>
+      <h3>FinTech</h3>
+      <p>Reimagine financial systems — from payments and lending to fraud detection and financial literacy. Build solutions that move money better and safer.</p>
+      <span class="track-tag">Financial Technology</span>
+    </div>
+    <div class="track-card healthtech">
+      <span class="track-icon">◉</span>
+      <h3>HealthTech</h3>
+      <p>Bridge the gap between healthcare and technology. Diagnose smarter, monitor continuously, and make quality care accessible to everyone.</p>
+      <span class="track-tag">Health Technology</span>
+    </div>
+  </div>
+</section>
+
+<!-- TIMELINE -->
+<section id="timeline">
+  <p class="section-tag">// 03 — event timeline</p>
+  <h2>Mark the Sequence.</h2>
+  <p class="section-sub">Every cipher unfolds in order. Miss a step and the message is lost.</p>
+  <div class="timeline-list">
+    <div class="tl-item">
+      <span class="tl-date">TBA</span>
+      <div>
+        <p class="tl-event">Registrations Open</p>
+        <p class="tl-detail">Form your team of 4 undergraduates and lock in your track.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-date">TBA</span>
+      <div>
+        <p class="tl-event">Problem Statements Released</p>
+        <p class="tl-detail">The cipher drops. Read carefully — every word is deliberate.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-date">TBA</span>
+      <div>
+        <p class="tl-event">Round 1 — Idea Submission</p>
+        <p class="tl-detail">Submit your approach and proposed solution for preliminary judging.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-date">TBA</span>
+      <div>
+        <p class="tl-event">Round 2 — Hackathon Day</p>
+        <p class="tl-detail">Shortlisted teams build, demo, and defend their solutions live.</p>
+      </div>
+    </div>
+    <div class="tl-item">
+      <span class="tl-date">TBA</span>
+      <div>
+        <p class="tl-event">Results &amp; Awards</p>
+        <p class="tl-detail">The enigma is solved. Winners announced and prize pool distributed.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRIZE -->
+<section id="prize">
+  <p class="section-tag">// 04 — prize pool</p>
+  <h2>What's at Stake.</h2>
+  <div class="prize-box">
+    <span class="prize-amount">₹25,000</span>
+    <p class="prize-label">Total Prize Pool</p>
+    <p class="prize-sub">Distributed across winning teams in both tracks. Glory is infinite. Cash is finite. Both are real.</p>
+  </div>
+</section>
+
+<!-- REGISTER -->
+<section id="register">
+  <div class="register-box">
+    <p class="section-tag">// 05 — register</p>
+    <h2>Crack the Enigma.</h2>
+    <p class="section-sub" style="margin:0 auto 2rem;">Open to all undergraduate students. Build your team of 4 and pick your track. Registration is free.</p>
+    <div class="register-meta">
+      <div class="reg-meta-item"><strong>Team Size</strong>4 members</div>
+      <div class="reg-meta-item"><strong>Eligibility</strong>UG Students</div>
+      <div class="reg-meta-item"><strong>Entry Fee</strong>Free</div>
+    </div>
+    <a href="#" class="btn-primary" style="font-size:1rem; padding:1rem 3rem;">Register Your Team →</a>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <p class="section-tag">// 06 — contact</p>
+  <h2>Reach the Team.</h2>
+  <p class="section-sub">Questions? Clarifications? The organizers are reachable. No riddle should go unanswered.</p>
+  <div class="contact-grid">
+    <div class="contact-card">
+      <h4>SIES CSI Tech Team</h4>
+      <p class="contact-role">Technical Domain</p>
+      <a href="mailto:csi@siesgst.ac.in">csi@siesgst.ac.in</a>
+    </div>
+    <div class="contact-card">
+      <h4>Enigma 5.0 Organizers</h4>
+      <p class="contact-role">Event Management</p>
+      <a href="mailto:enigma@siesgst.ac.in">enigma@siesgst.ac.in</a>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span>© 2025 SIES CSI Student Chapter</span>
+  <span>[ ENIGMA&thinsp;5&thinsp;.&thinsp;0 &nbsp;—&nbsp; DECODE. BUILD. WIN. ]</span>
+</footer>
+
+<script>
+  // ── Cipher tape scroll content ──
+  const tape = document.getElementById('tape');
+  const symbols = '01 FF 3A 7C B9 E2 D4 0A 5F 91 A3 44 ENIGMA 10 C0 DE 5.0 SIES CSI 00 11 AB FF 01 ';
+  tape.textContent = (symbols + ' ').repeat(8);
+
+  // ── Cipher decode animation on hero title ──
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&';
+  const target = 'ENIGMA';
+  const el = document.getElementById('cipher');
+  let frame = 0;
+
+  function decode() {
+    let result = '';
+    for (let i = 0; i < target.length; i++) {
+      if (frame > i * 5) {
+        result += target[i];
+      } else {
+        result += chars[Math.floor(Math.random() * chars.length)];
+      }
+    }
+    el.textContent = result;
+    el.setAttribute('data-text', result);
+    frame++;
+    if (frame < target.length * 5 + 10) {
+      requestAnimationFrame(decode);
+    } else {
+      el.textContent = target;
+      el.setAttribute('data-text', target);
+    }
+  }
+
+  setTimeout(decode, 400);
+
+  // ── Intersection observer fade-in ──
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.opacity = '1';
+        e.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.track-card, .tl-item, .contact-card, .prize-box').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(24px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+</script>
+</body>
+</html>
